@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace csharp_async_demo
@@ -26,8 +27,30 @@ namespace csharp_async_demo
 
                 var periodicJobTask = periodicJob.Run(runCts.Token);
 
+
+                var channel = Channel.CreateBounded<string>(
+                    new BoundedChannelOptions(5) {
+                            SingleReader = true,
+                            SingleWriter = true,
+                            FullMode= BoundedChannelFullMode.Wait
+                    } );
+                
+                var producer = new Producer(channel.Writer);
+                var consumer = new Consumer(channel.Reader);
+
+                var producerTask = producer.Run(runCts.Token);
+                
+                // Attaching consumer to cancellation token terminates
+                // it immediately, regardless of messages left in the channel
+                // var consumerTask = consumer.Run(runCts.Token);
+                
+                // Not attaching to cancellation token makes it terminate
+                // when producer completes channel
+                var consumerTask = consumer.Run(default);
+
+
                 Console.WriteLine("Waiting for Ctrl-C and all tasks to finish");
-                await periodicJobTask;
+                await Task.WhenAll(periodicJobTask, producerTask, consumerTask);
 
                 Console.WriteLine("Main() end");
                 return 0;
