@@ -5,17 +5,41 @@ using System.Threading.Tasks;
 
 namespace csharp_async_demo
 {
-    public class Consumer
+    public class ChannelConsumer
     {
         private readonly ChannelReader<string> _reader;
 
-        public Consumer(ChannelReader<string> reader)
+        public ChannelConsumer(ChannelReader<string> reader)
         {
             _reader = reader;
         }
 
-        public async Task Run(CancellationToken ct)
+        public async Task RunAsync(CancellationToken ct)
         {
+            try
+            {
+               while ( ! ct.IsCancellationRequested )
+               {
+                    string message = await _reader.ReadAsync(ct);
+
+                    Console.WriteLine($"Consumed {message}");
+
+                    // artificial slow consumer
+                    await Task.Delay(TimeSpan.FromSeconds(2), ct);
+               }
+            }
+            catch (ChannelClosedException)
+            {
+                // When end of channel is reached
+            }
+            catch (OperationCanceledException)
+            {
+                // Consider cancellation as normal exit
+            }
+
+
+            // Similar using ReadAllAsync()
+            /*
             try
             {
                 // Note: ReadAllAsync() will read to the end of the channel
@@ -34,6 +58,7 @@ namespace csharp_async_demo
             {
                 // Consider cancellation as normal exit
             }
+            */
         }
     }
 }

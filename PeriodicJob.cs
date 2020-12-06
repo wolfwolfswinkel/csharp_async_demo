@@ -25,7 +25,6 @@ public class PeriodicJob
         catch (TaskCanceledException)
         {
             // Consider cancellation as normal exit
-            return;
         }
     }
 }

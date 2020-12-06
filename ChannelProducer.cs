@@ -5,17 +5,17 @@ using System.Threading.Tasks;
 
 namespace csharp_async_demo
 {
-    public class Producer
+    public class ChannelProducer
     {
         private readonly ChannelWriter<string> _writer;
         private int _count;
 
-        public Producer(ChannelWriter<string> writer)
+        public ChannelProducer(ChannelWriter<string> writer)
         {
             _writer = writer;
         }
 
-        public async Task Run(CancellationToken ct)
+        public async Task RunAsync(CancellationToken ct)
         {
             try
             {

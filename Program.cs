@@ -28,17 +28,20 @@ namespace csharp_async_demo
                 var periodicJobTask = periodicJob.Run(runCts.Token);
 
 
-                var channel = Channel.CreateBounded<string>(
-                    new BoundedChannelOptions(5) {
-                            SingleReader = true,
-                            SingleWriter = true,
-                            FullMode= BoundedChannelFullMode.Wait
-                    } );
-                
-                var producer = new Producer(channel.Writer);
-                var consumer = new Consumer(channel.Reader);
+                var channel = Channel.CreateBounded<string>(5);
 
-                var producerTask = producer.Run(runCts.Token);
+                // Channel can have specialized settings 
+                // var channel = Channel.CreateBounded<string>(
+                //    new BoundedChannelOptions(5) {
+                //            SingleReader = true,
+                //            SingleWriter = true,
+                //            FullMode= BoundedChannelFullMode.Wait
+                //    } );
+                
+                var producer = new ChannelProducer(channel.Writer);
+                var consumer = new ChannelConsumer(channel.Reader);
+
+                var producerTask = producer.RunAsync(runCts.Token);
                 
                 // Attaching consumer to cancellation token terminates
                 // it immediately, regardless of messages left in the channel
@@ -46,8 +49,10 @@ namespace csharp_async_demo
                 
                 // Not attaching to cancellation token makes it terminate
                 // when producer completes channel
-                var consumerTask = consumer.Run(default);
+                var consumerTask = consumer.RunAsync(default);
 
+                // Attaching makes it terminate immediately
+                // var consumerTask = consumer.RunAsync(runCts.Token);
 
                 Console.WriteLine("Waiting for Ctrl-C and all tasks to finish");
                 await Task.WhenAll(periodicJobTask, producerTask, consumerTask);
